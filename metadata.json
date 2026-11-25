@@ -1,0 +1,6 @@
+{
+  "name": "OtoSkor",
+  "description": "Aplikasi PWA inspeksi profesional, dokumentasi legal, riwayat servis, dan penilaian skor fisik serta nilai harga pasar mobil bekas.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

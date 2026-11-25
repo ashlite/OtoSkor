@@ -1,0 +1,277 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Primitive Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Blueprints ---
+    function isValidAiSettings(cfg) {
+      return cfg is map
+        && cfg.keys().hasAll(['provider', 'geminiModel', 'openaiModel', 'useWebSearch'])
+        && cfg.keys().hasOnly([
+          'provider',
+          'geminiModel',
+          'openaiModel',
+          'claudeModel',
+          'customBaseUrl',
+          'customModel',
+          'useWebSearch'
+        ])
+        && cfg.provider is string && cfg.provider.size() <= 20
+        && cfg.provider in ['gemini', 'openai', 'claude', 'custom']
+        && cfg.geminiModel is string && cfg.geminiModel.size() >= 1 && cfg.geminiModel.size() <= 80
+        && cfg.openaiModel is string && cfg.openaiModel.size() >= 1 && cfg.openaiModel.size() <= 80
+        && (!cfg.keys().hasAny(['claudeModel']) || (cfg.claudeModel is string && cfg.claudeModel.size() >= 1 && cfg.claudeModel.size() <= 80))
+        && (!cfg.keys().hasAny(['customBaseUrl']) || (cfg.customBaseUrl is string && cfg.customBaseUrl.size() <= 250))
+        && (!cfg.keys().hasAny(['customModel']) || (cfg.customModel is string && cfg.customModel.size() <= 80))
+        && cfg.useWebSearch is bool;
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'aiSettings', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == userId
+        && data.uid == request.auth.uid
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+        && (!data.keys().hasAny(['photoURL']) || (data.photoURL is string && data.photoURL.size() <= 1000))
+        && (!data.keys().hasAny(['aiSettings']) || isValidAiSettings(data.aiSettings))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidVehicle(data, userId, vehicleId) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'name', 'brand', 'model', 'year',
+          'transmission', 'fuelType', 'color', 'licensePlate',
+          'odometerKm', 'askingPrice', 'marketPrice', 'estimatedRepairCost',
+          'location', 'sellerName', 'sellerPhone', 'sellerType',
+          'legalChecklist', 'checklistResponses',
+          'physicalScore', 'marketValueScore', 'overallVerdict',
+          'redFlags', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'name', 'brand', 'model', 'year',
+          'transmission', 'fuelType', 'color', 'licensePlate',
+          'odometerKm', 'askingPrice', 'marketPrice', 'newCarPrice', 'productionStatus',
+          'estimatedRepairCost', 'location', 'sellerName', 'sellerPhone', 'sellerType',
+          'legalChecklist', 'checklistResponses',
+          'physicalScore', 'marketValueScore', 'overallVerdict',
+          'redFlags', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.id == vehicleId
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.brand is string && data.brand.size() >= 1 && data.brand.size() <= 60
+        && data.model is string && data.model.size() >= 1 && data.model.size() <= 80
+        && data.year is int && data.year >= 1960 && data.year <= 2035
+        && data.transmission is string && data.transmission.size() <= 40
+        && data.transmission in ['Matik (AT/CVT)', 'Manual (MT)', 'DCT / Dual-Clutch']
+        && data.fuelType is string && data.fuelType.size() <= 30
+        && data.fuelType in ['Bensin', 'Diesel', 'Hybrid', 'Listrik (EV)']
+        && data.color is string && data.color.size() <= 40
+        && data.licensePlate is string && data.licensePlate.size() <= 20
+        && data.odometerKm is number && data.odometerKm >= 0 && data.odometerKm <= 2000000
+        && data.askingPrice is number && data.askingPrice >= 0 && data.askingPrice <= 100000000000
+        && data.marketPrice is number && data.marketPrice >= 0 && data.marketPrice <= 100000000000
+        && (!data.keys().hasAny(['newCarPrice']) || (data.newCarPrice is number && data.newCarPrice >= 0 && data.newCarPrice <= 100000000000))
+        && (!data.keys().hasAny(['productionStatus']) || (data.productionStatus is string && data.productionStatus.size() <= 30 && data.productionStatus in ['Masih Diproduksi', 'Diskontinue', 'Belum Diketahui']))
+        && data.estimatedRepairCost is number && data.estimatedRepairCost >= 0 && data.estimatedRepairCost <= 100000000000
+        && data.location is string && data.location.size() >= 1 && data.location.size() <= 160
+        && data.sellerName is string && data.sellerName.size() >= 1 && data.sellerName.size() <= 100
+        && data.sellerPhone is string && data.sellerPhone.size() >= 1 && data.sellerPhone.size() <= 32
+        && data.sellerType is string && data.sellerType.size() <= 40
+        && data.sellerType in ['Perorangan', 'Showroom', 'Dealer Resmi Bekas']
+        && data.legalChecklist is map
+        && data.legalChecklist.keys().hasAll(['stnk', 'bpkb', 'faktur', 'taxActive', 'vinMatch', 'notes'])
+        && data.legalChecklist.keys().hasOnly(['stnk', 'bpkb', 'faktur', 'taxActive', 'vinMatch', 'taxExpiry', 'notes'])
+        && data.legalChecklist.stnk is bool
+        && data.legalChecklist.bpkb is bool
+        && data.legalChecklist.faktur is bool
+        && data.legalChecklist.taxActive is bool
+        && data.legalChecklist.vinMatch is bool
+        && (!data.legalChecklist.keys().hasAny(['taxExpiry']) || (data.legalChecklist.taxExpiry is string && data.legalChecklist.taxExpiry.size() <= 30))
+        && data.legalChecklist.notes is string && data.legalChecklist.notes.size() <= 500
+        && data.checklistResponses is map
+        && data.checklistResponses.keys().size() <= 80
+        && data.physicalScore is number && data.physicalScore >= 0 && data.physicalScore <= 100
+        && data.marketValueScore is number && data.marketValueScore >= 0 && data.marketValueScore <= 100
+        && data.overallVerdict is string && data.overallVerdict.size() <= 40
+        && data.overallVerdict in ['Sangat Layak', 'Layak Pertimbangkan', 'Perlu Negosiasi', 'Hindari / Red Flag', 'Belum Dinilai']
+        && data.redFlags is list && data.redFlags.size() <= 20
+        && (data.redFlags.size() == 0 || (data.redFlags[0] is string && data.redFlags[0].size() <= 160))
+        && data.notes is string && data.notes.size() <= 2000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidLegalDocument(data, userId, vehicleId, docId) {
+      return data.keys().hasAll(['id', 'ownerId', 'vehicleId', 'docType', 'title', 'imageDataUrl', 'notes', 'createdAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'vehicleId', 'docType', 'title', 'imageDataUrl', 'notes', 'createdAt'])
+        && isValidId(data.id)
+        && data.id == docId
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && isValidId(data.vehicleId)
+        && data.vehicleId == vehicleId
+        && data.docType is string && data.docType.size() <= 40
+        && data.docType in ['STNK', 'BPKB', 'Faktur', 'Notice Pajak', 'Kuitansi', 'Foto Unit / Lainnya']
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 120
+        && data.imageDataUrl is string && data.imageDataUrl.size() >= 10 && data.imageDataUrl.size() <= 450000
+        && data.notes is string && data.notes.size() <= 400
+        && data.createdAt is timestamp;
+    }
+
+    function isValidServiceRecord(data, userId, vehicleId, recordId) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'vehicleId', 'serviceDate', 'odometerKm',
+          'workshopName', 'workshopType', 'workDescription', 'cost', 'hasReceipt', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'vehicleId', 'serviceDate', 'odometerKm',
+          'workshopName', 'workshopType', 'workDescription', 'cost', 'hasReceipt', 'createdAt'
+        ])
+        && isValidId(data.id)
+        && data.id == recordId
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && isValidId(data.vehicleId)
+        && data.vehicleId == vehicleId
+        && data.serviceDate is string && data.serviceDate.size() >= 4 && data.serviceDate.size() <= 20
+        && data.odometerKm is number && data.odometerKm >= 0 && data.odometerKm <= 2000000
+        && data.workshopName is string && data.workshopName.size() >= 1 && data.workshopName.size() <= 120
+        && data.workshopType is string && data.workshopType.size() <= 40
+        && data.workshopType in ['Bengkel Resmi', 'Bengkel Spesialis', 'Bengkel Umum', 'Mandiri']
+        && data.workDescription is string && data.workDescription.size() >= 1 && data.workDescription.size() <= 600
+        && data.cost is number && data.cost >= 0 && data.cost <= 100000000000
+        && data.hasReceipt is bool
+        && data.createdAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow create: if isValidId(userId)
+        && isEmailVerified()
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId)
+        && isEmailVerified()
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'photoURL', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['aiSettings', 'updatedAt'])
+        );
+
+      match /vehicles/{vehicleId} {
+        allow get: if isValidId(userId) && isValidId(vehicleId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId)
+          && isValidId(vehicleId)
+          && isEmailVerified()
+          && isOwner(userId)
+          && isValidVehicle(incoming(), userId, vehicleId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId)
+          && isValidId(vehicleId)
+          && isEmailVerified()
+          && isOwner(userId)
+          && isValidVehicle(incoming(), userId, vehicleId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'brand', 'model', 'year', 'transmission', 'fuelType',
+              'color', 'licensePlate', 'odometerKm', 'askingPrice', 'marketPrice',
+              'newCarPrice', 'productionStatus',
+              'location', 'sellerName', 'sellerPhone', 'sellerType', 'legalChecklist',
+              'notes', 'physicalScore', 'marketValueScore', 'overallVerdict',
+              'redFlags', 'updatedAt'
+            ]) ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'checklistResponses', 'estimatedRepairCost', 'physicalScore',
+              'marketValueScore', 'overallVerdict', 'redFlags', 'notes', 'updatedAt'
+            ]) ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'legalChecklist', 'physicalScore', 'marketValueScore',
+              'overallVerdict', 'redFlags', 'updatedAt'
+            ])
+          );
+        allow delete: if isValidId(userId) && isValidId(vehicleId) && isEmailVerified() && isOwner(userId) && existing().ownerId == request.auth.uid;
+
+        match /legalDocs/{docId} {
+          allow get: if isValidId(userId) && isValidId(vehicleId) && isValidId(docId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+          allow list: if isValidId(userId) && isValidId(vehicleId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+          allow create: if isValidId(userId)
+            && isValidId(vehicleId)
+            && isValidId(docId)
+            && isEmailVerified()
+            && isOwner(userId)
+            && isValidLegalDocument(incoming(), userId, vehicleId, docId)
+            && incoming().createdAt == request.time
+            && exists(/databases/$(database)/documents/users/$(userId)/vehicles/$(vehicleId))
+            && get(/databases/$(database)/documents/users/$(userId)/vehicles/$(vehicleId)).data.ownerId == request.auth.uid;
+          allow delete: if isValidId(userId) && isValidId(vehicleId) && isValidId(docId) && isEmailVerified() && isOwner(userId) && existing().ownerId == request.auth.uid;
+        }
+
+        match /serviceRecords/{recordId} {
+          allow get: if isValidId(userId) && isValidId(vehicleId) && isValidId(recordId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+          allow list: if isValidId(userId) && isValidId(vehicleId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+          allow create: if isValidId(userId)
+            && isValidId(vehicleId)
+            && isValidId(recordId)
+            && isEmailVerified()
+            && isOwner(userId)
+            && isValidServiceRecord(incoming(), userId, vehicleId, recordId)
+            && incoming().createdAt == request.time
+            && exists(/databases/$(database)/documents/users/$(userId)/vehicles/$(vehicleId))
+            && get(/databases/$(database)/documents/users/$(userId)/vehicles/$(vehicleId)).data.ownerId == request.auth.uid;
+          allow delete: if isValidId(userId) && isValidId(vehicleId) && isValidId(recordId) && isEmailVerified() && isOwner(userId) && existing().ownerId == request.auth.uid;
+        }
+      }
+    }
+  }
+}

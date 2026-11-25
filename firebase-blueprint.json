@@ -1,0 +1,366 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Profil akun pengguna terautentikasi untuk sinkronisasi data inspeksi mobil bekas.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 254
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "aiSettings": {
+          "type": "object",
+          "description": "Preferensi provider AI (gemini, openai, claude, atau custom), model/endpoint pilihan, dan opsi pencarian web tanpa menyimpan token rahasia."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "displayName", "createdAt", "updatedAt"]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Data unit mobil bekas kandidat, informasi penjual, harga pasar, kelengkapan legal, checklist inspeksi, dan skor ganda.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "brand": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "year": {
+          "type": "integer"
+        },
+        "transmission": {
+          "type": "string",
+          "enum": ["Matik (AT/CVT)", "Manual (MT)", "DCT / Dual-Clutch"],
+          "maxLength": 40
+        },
+        "fuelType": {
+          "type": "string",
+          "enum": ["Bensin", "Diesel", "Hybrid", "Listrik (EV)"],
+          "maxLength": 30
+        },
+        "color": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "licensePlate": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "odometerKm": {
+          "type": "number"
+        },
+        "askingPrice": {
+          "type": "number"
+        },
+        "marketPrice": {
+          "type": "number"
+        },
+        "newCarPrice": {
+          "type": "number",
+          "description": "Harga unit baru (OTR saat ini atau OTR terakhir sebelum diskontinue)."
+        },
+        "productionStatus": {
+          "type": "string",
+          "enum": ["Masih Diproduksi", "Diskontinue", "Belum Diketahui"],
+          "maxLength": 30
+        },
+        "estimatedRepairCost": {
+          "type": "number"
+        },
+        "location": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "sellerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "sellerPhone": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "sellerType": {
+          "type": "string",
+          "enum": ["Perorangan", "Showroom", "Dealer Resmi Bekas"],
+          "maxLength": 40
+        },
+        "legalChecklist": {
+          "type": "object",
+          "description": "Status kelengkapan dokumen legal (STNK, BPKB, Faktur, Pajak, kecocokan nomor rangka/mesin)."
+        },
+        "checklistResponses": {
+          "type": "object",
+          "description": "Peta hasil inspeksi per item ID berisi status, catatan, dan estimasi perbaikan."
+        },
+        "physicalScore": {
+          "type": "number"
+        },
+        "marketValueScore": {
+          "type": "number"
+        },
+        "overallVerdict": {
+          "type": "string",
+          "enum": [
+            "Sangat Layak",
+            "Layak Pertimbangkan",
+            "Perlu Negosiasi",
+            "Hindari / Red Flag",
+            "Belum Dinilai"
+          ],
+          "maxLength": 40
+        },
+        "redFlags": {
+          "type": "array",
+          "description": "Daftar temuan kritis inspeksi (maks 20 item)."
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "name",
+        "brand",
+        "model",
+        "year",
+        "transmission",
+        "fuelType",
+        "color",
+        "licensePlate",
+        "odometerKm",
+        "askingPrice",
+        "marketPrice",
+        "estimatedRepairCost",
+        "location",
+        "sellerName",
+        "sellerPhone",
+        "sellerType",
+        "legalChecklist",
+        "checklistResponses",
+        "physicalScore",
+        "marketValueScore",
+        "overallVerdict",
+        "redFlags",
+        "notes",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LegalDocument": {
+      "title": "LegalDocument",
+      "description": "Foto terkompresi dokumen legal kendaraan (STNK, BPKB, Faktur, Pajak, Kuitansi).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "vehicleId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "docType": {
+          "type": "string",
+          "enum": [
+            "STNK",
+            "BPKB",
+            "Faktur",
+            "Notice Pajak",
+            "Kuitansi",
+            "Foto Unit / Lainnya"
+          ],
+          "maxLength": 40
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "imageDataUrl": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 450000
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "vehicleId",
+        "docType",
+        "title",
+        "imageDataUrl",
+        "notes",
+        "createdAt"
+      ]
+    },
+    "ServiceRecord": {
+      "title": "ServiceRecord",
+      "description": "Catatan riwayat perawatan dan perbaikan berkala kendaraan.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "vehicleId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "serviceDate": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "odometerKm": {
+          "type": "number"
+        },
+        "workshopName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "workshopType": {
+          "type": "string",
+          "enum": [
+            "Bengkel Resmi",
+            "Bengkel Spesialis",
+            "Bengkel Umum",
+            "Mandiri"
+          ],
+          "maxLength": 40
+        },
+        "workDescription": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "cost": {
+          "type": "number"
+        },
+        "hasReceipt": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "vehicleId",
+        "serviceDate",
+        "odometerKm",
+        "workshopName",
+        "workshopType",
+        "workDescription",
+        "cost",
+        "hasReceipt",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Profil pengguna terautentikasi (PII terisolasi hanya untuk pemilik akun)."
+    },
+    "/users/{userId}/vehicles/{vehicleId}": {
+      "schema": {
+        "$ref": "#/entities/Vehicle"
+      },
+      "description": "Daftar unit mobil bekas kandidat beserta informasi legal, checklist inspeksi, dan skor."
+    },
+    "/users/{userId}/vehicles/{vehicleId}/legalDocs/{docId}": {
+      "schema": {
+        "$ref": "#/entities/LegalDocument"
+      },
+      "description": "Subkoleksi foto dokumen legal terkompresi milik unit mobil."
+    },
+    "/users/{userId}/vehicles/{vehicleId}/serviceRecords/{recordId}": {
+      "schema": {
+        "$ref": "#/entities/ServiceRecord"
+      },
+      "description": "Subkoleksi catatan riwayat servis berkala milik unit mobil."
+    }
+  }
+}
