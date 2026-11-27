@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, Eye, Info, OctagonAlert, X } from 'lucide-react';
 import { VISUAL_GUIDES, type VisualGuideId } from '@/src/data/inspectionCatalog';
+import { useBackHandler } from '@/src/hooks/useBackHandler';
 
 interface VisualGuideModalProps {
   initialGuideId: VisualGuideId | null;
@@ -27,6 +28,8 @@ export const VisualGuideModal: React.FC<VisualGuideModalProps> = ({
       setActiveId(initialGuideId);
     }
   }, [initialGuideId]);
+
+  useBackHandler(initialGuideId !== null, onClose);
 
   if (!initialGuideId) return null;
 

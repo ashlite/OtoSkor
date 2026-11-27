@@ -28,6 +28,7 @@ import {
   type Vehicle,
 } from '@/src/types/inspection';
 import { compressImageToDataUrl } from '@/src/utils/imageCompression';
+import { useBackHandler } from '@/src/hooks/useBackHandler';
 import { formatIDR } from '@/src/utils/scoring';
 
 interface CategoryAiInspectionModalProps {
@@ -128,6 +129,8 @@ export const CategoryAiInspectionModal: React.FC<CategoryAiInspectionModalProps>
       });
     }
   }, [legalDocs, category]);
+
+  useBackHandler(category !== null, onClose);
 
   if (!category) return null;
 

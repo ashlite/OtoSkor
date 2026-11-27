@@ -23,6 +23,7 @@ import {
   type ProviderTokens,
 } from '@/src/services/aiSettingsService';
 import { testAiConnection } from '@/src/services/aiEstimateService';
+import { useBackHandler } from '@/src/hooks/useBackHandler';
 import type { AiProvider, UserAiPreferences } from '@/src/types/inspection';
 
 interface AccountAiSettingsModalProps {
@@ -101,6 +102,8 @@ export const AccountAiSettingsModal: React.FC<AccountAiSettingsModalProps> = ({
     setTestResult(null);
     setErrorMsg(null);
   }, [isOpen, preferences, user.uid]);
+
+  useBackHandler(isOpen, onClose);
 
   if (!isOpen) return null;
 

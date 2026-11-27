@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -27,6 +27,7 @@ import {
   formatKm,
   sanitizeWhatsAppPhone,
 } from '@/src/utils/scoring';
+import { useBackHandler } from '@/src/hooks/useBackHandler';
 import { InspectionChecklistTab } from '@/src/components/InspectionChecklistTab';
 import { LegalDocsTab } from '@/src/components/LegalDocsTab';
 import { ServiceRecordTab } from '@/src/components/ServiceRecordTab';
@@ -83,6 +84,15 @@ export const VehicleDetailWorkspace: React.FC<VehicleDetailWorkspaceProps> = ({
   const [activeTab, setActiveTab] = useState<DetailTab>('summary');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    setActiveTab('summary');
+    setConfirmDelete(false);
+  }, [vehicle.id]);
+
+  useBackHandler(activeTab !== 'summary', () => {
+    setActiveTab('summary');
+  });
 
   const computed = calculateVehicleScores({
     askingPrice: vehicle.askingPrice,

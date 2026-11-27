@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Download, Share, X } from 'lucide-react';
+import { useBackHandler } from '@/src/hooks/useBackHandler';
 import { usePWAInstall } from '@/src/hooks/usePWAInstall';
 
 export const PWAInstallButton: React.FC = () => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+
+  useBackHandler(showIOSGuide, () => setShowIOSGuide(false));
 
   if (isInstalled) {
     return null;

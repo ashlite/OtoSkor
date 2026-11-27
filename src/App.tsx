@@ -45,6 +45,7 @@ import type {
   Vehicle,
   WorkshopType,
 } from '@/src/types/inspection';
+import { useBackHandler } from '@/src/hooks/useBackHandler';
 import { AccountAiSettingsModal } from '@/src/components/AccountAiSettingsModal';
 import { AuthGate } from '@/src/components/AuthGate';
 import { CompareView } from '@/src/components/CompareView';
@@ -199,6 +200,10 @@ function MainApp() {
       return [...prev, vehicleId];
     });
   };
+
+  useBackHandler(Boolean(user) && activeView !== 'garage', () => {
+    setActiveView('garage');
+  });
 
   const handleOpenVehicleDetail = (vehicleId: string) => {
     setSelectedVehicleId(vehicleId);

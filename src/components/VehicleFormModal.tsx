@@ -16,6 +16,7 @@ import {
   type NewCarInfoEstimateResult,
 } from '@/src/services/aiEstimateService';
 import { formatAiProviderLabel } from '@/src/services/aiSettingsService';
+import { useBackHandler } from '@/src/hooks/useBackHandler';
 import { formatIDR } from '@/src/utils/scoring';
 
 interface VehicleFormModalProps {
@@ -104,6 +105,8 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
     setAiMarketInfo(null);
     setAiNewCarInfo(null);
   }, [isOpen, editingVehicle]);
+
+  useBackHandler(isOpen, onClose);
 
   if (!isOpen) return null;
 

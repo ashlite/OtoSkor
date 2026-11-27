@@ -1,11 +1,12 @@
 import React, { useRef, useState } from 'react';
-import { Camera, CheckCircle2, FileText, Trash2, X, ZoomIn } from 'lucide-react';
+import { Camera, CheckCircle2, FileText, ImagePlus, Trash2, X, ZoomIn } from 'lucide-react';
 import {
   FIELD_LIMITS,
   type DocType,
   type LegalDocument,
   type Vehicle,
 } from '@/src/types/inspection';
+import { useBackHandler } from '@/src/hooks/useBackHandler';
 import { compressImageToDataUrl } from '@/src/utils/imageCompression';
 
 interface LegalDocsTabProps {
@@ -37,13 +38,16 @@ export const LegalDocsTab: React.FC<LegalDocsTabProps> = ({
   onDeleteDoc,
   onEditLegalChecklist,
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [docType, setDocType] = useState<DocType>('STNK');
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<LegalDocument | null>(null);
+
+  useBackHandler(previewDoc !== null, () => setPreviewDoc(null));
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -61,8 +65,11 @@ export const LegalDocsTab: React.FC<LegalDocsTabProps> = ({
       });
       setTitle('');
       setNotes('');
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = '';
+      }
+      if (galleryInputRef.current) {
+        galleryInputRef.current.value = '';
       }
     } catch (err) {
       setUploadError(
@@ -188,23 +195,39 @@ export const LegalDocsTab: React.FC<LegalDocsTabProps> = ({
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           <input
-            ref={fileInputRef}
+            ref={cameraInputRef}
             type="file"
             accept="image/*"
             capture="environment"
             onChange={(e) => void handleFileChange(e)}
             className="hidden"
           />
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/*"
+            onChange={(e) => void handleFileChange(e)}
+            className="hidden"
+          />
           <button
             type="button"
             disabled={isUploading}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => cameraInputRef.current?.click()}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
           >
             <Camera className="h-4 w-4" />
-            <span>{isUploading ? 'Mengompresi & Mengunggah...' : 'Pilih / Ambil Foto Dokumen'}</span>
+            <span>{isUploading ? 'Mengompresi & Mengunggah...' : 'Ambil Foto Kamera'}</span>
+          </button>
+          <button
+            type="button"
+            disabled={isUploading}
+            onClick={() => galleryInputRef.current?.click()}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            <ImagePlus className="h-4 w-4" />
+            <span>Pilih dari Galeri</span>
           </button>
         </div>
       </section>
